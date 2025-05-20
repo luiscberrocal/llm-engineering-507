@@ -3,4 +3,7 @@ name = "llm-engineering-507"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "openai>=1.79.0",
+    "requests>=2.32.3",
+]
