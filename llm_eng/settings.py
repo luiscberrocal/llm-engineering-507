@@ -54,7 +54,6 @@ HEADERS = {"Content-Type": "application/json"}
 # MODEL = "llama3.2"
 MODEL = "deepseek-r1:7b"
 
-logging.config.dictConfig(LOGGING_CONFIG)
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.debug("Logging configuration is set up.")

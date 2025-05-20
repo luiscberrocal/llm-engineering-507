@@ -1,6 +1,6 @@
 import pytest
 
-from scripts.week1.schemas import DockerHubImage
+from llm_eng.code_review.schemas import DockerHubImage
 
 
 class TestDockerHubImage:
