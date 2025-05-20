@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
@@ -103,7 +104,8 @@ def get_file_age(path: Path) -> float:
         int: The age of the file in days.
     """
     if path.exists():
-        return (Path().stat().st_mtime - path.stat().st_mtime) // 3600
+        now = datetime.now().timestamp()
+        return (now - path.stat().st_mtime) // 3600
     else:
         return 0.0
 

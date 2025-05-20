@@ -13,9 +13,10 @@ def test_get_file_age():
         temp_file.write(b"test")
         temp_file.flush()
         temp_file.close()
-
+    
     # Get the file age
-    age = get_file_age(temp_file_path)
+    f = Path("/home/luiscberrocal/Downloads/Managing Multiple Django Versions with Gitflow.md")
+    age = get_file_age(f)
 
     # Check if the age is greater than or equal to 0
     assert age >= 0
