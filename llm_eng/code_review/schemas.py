@@ -29,3 +29,15 @@ class DockerHubImage(BaseModel):
         version_part, distro = string.split("-", 1)
         version = tuple(map(int, version_part.split(".")))
         return cls(name=name, version=version, distro=distro)
+
+    def __lt__(self, other: "DockerHubImage") -> bool:
+        """Compare DockerHubImage objects by version and distro."""
+        if not isinstance(other, DockerHubImage):
+            return NotImplemented
+        return (self.version, self.distro) < (other.version, other.distro)
+
+    def __eq__(self, other: "DockerHubImage") -> bool:
+        """Check equality of DockerHubImage objects."""
+        if not isinstance(other, DockerHubImage):
+            return NotImplemented
+        return (self.version, self.distro) == (other.version, other.distro)

@@ -63,3 +63,17 @@ class TestDockerHubImage:
             or docker_image.distro == "alpine"
         )
         assert docker_image.image_name() == image
+
+    def test_ordering(self):
+        images = [
+            DockerHubImage(name="python", version=(3, 8, 10), distro="alpine3.2"),
+            DockerHubImage(name="python", version=(3, 9), distro="bookworm"),
+            DockerHubImage(name="python", version=(3, 12, 3), distro="bookworm"),
+            DockerHubImage(name="python", version=(3, 8, 10), distro="bookworm"),
+            DockerHubImage(name="python", version=(3, 7), distro="alpine3.2"),
+        ]
+
+        ordered_images = sorted(images, reverse=True)
+        assert ordered_images[0].image_name() == "3.12.3-bookworm"
+        assert ordered_images[1].image_name() == "3.9-bookworm"
+
