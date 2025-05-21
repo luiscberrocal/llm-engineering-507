@@ -24,8 +24,9 @@ class DockerHubSerializer:
             max_age (int): The maximum age of the JSON files in hours. Default is 48 hours.
         """
         self.folder_path = folder_path
+        self.max_age = max_age
 
-    def serialize(self, images: list[DockerHubImage], image_type:str) -> Path:
+    def serialize(self, images: list[DockerHubImage], image_type:str) -> Path | None:
         """
         Serializes a list of DockerHubImage objects to JSON files.
 
@@ -35,10 +36,13 @@ class DockerHubSerializer:
         """
 
         file_path = self.folder_path / f"{image_type}.json"
-        image_list = [image.model_dump() for image in images if image.name == image_type]
-        with open(file_path, "w") as f:
-            json.dump(image_list, f)
-        return file_path
+        if file_path.exists() and get_file_age(file_path) < self.max_age:
+            image_list = [image.model_dump() for image in images if image.name == image_type]
+            with open(file_path, "w") as f:
+                json.dump(image_list, f)
+            return file_path
+        else:
+            return None
 
     def deserialize(self, image_type:str) -> list[DockerHubImage]:
         """
