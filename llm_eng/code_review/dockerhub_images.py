@@ -14,19 +14,55 @@ from llm_eng.settings import IMAGE_LIST
 # Apply the logging configuration
 logger = logging.getLogger("__main__")
 
+class DockerHubSerializer:
+
+    def __init__(self, folder_path: Path):
+        self.folder_path = folder_path
+
+    def serialize(self, images: list[DockerHubImage], image_type:str) -> Path:
+        """
+        Serializes a list of DockerHubImage objects to JSON files.
+
+        Args:
+            images (list[DockerHubImage]): List of DockerHubImage objects to serialize.
+            image_type: str: The type of image to filter by (e.g., "python", "postgres").
+        """
+
+        file_path = self.folder_path / f"{image_type}.json"
+        image_list = [image.model_dump() for image in images if image.name == image_type]
+        with open(file_path, "w") as f:
+            json.dump(image_list, f)
+        return file_path
+
+    def deserialize(self, image_type:str) -> list[DockerHubImage]:
+        """
+        Deserializes a JSON file to a list of DockerHubImage objects.
+
+        Args:
+            image_type: str: The type of image to filter by (e.g., "python", "postgres").
+        """
+        file_path = self.folder_path / f"{image_type}.json"
+        if file_path.exists():
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            return [DockerHubImage(**item) for item in data]
+        else:
+            return []
+
 class DockerHubClient:
     """
     A client for interacting with the Docker Hub API to fetch available Python versions (tags).
     """
 
-    def __init__(self, base_url: str = None,page_size: int = 100):
+    def __init__(self, serializer: DockerHubSerializer | None, base_url: str = None,page_size: int = 100):
         if base_url is None:
             # Base URL for the official Python image tags on Docker Hub V2 API
             base_url = "https://hub.docker.com/v2/repositories/library/"
         self.base_url = base_url
         self.page_size = page_size
+        self.serializer = serializer
 
-    def get_versions(self, image_name) -> list[DockerHubImage]:
+    def get_versions(self, image_type:str) -> list[DockerHubImage]:
         """
         Fetches a list of available Python versions (tags) from Docker Hub.
 
@@ -34,7 +70,13 @@ class DockerHubClient:
             list: A list of strings, where each string is a Python version tag.
                   Returns an empty list if an error occurs or no tags are found.
         """
-        url = f"{self.base_url}/{image_name}/tags/"
+        if self.serializer:
+            # Check if the data is already serialized
+            images = self.serializer.deserialize(image_type)
+            if images:
+                return images
+
+        url = f"{self.base_url}{image_type}/tags/"
         all_tags = []
         next_page = url
         while next_page:
@@ -54,8 +96,13 @@ class DockerHubClient:
                 for result in data.get("results", []):
                     tag_name = result.get("name")
                     if tag_name:
-                        image = DockerHubImage.from_string(tag_name, image_name)
-                        all_tags.append(image)
+                        try:
+                            image = DockerHubImage.from_string(tag_name, image_type)
+                            print(f"Image {image_type} found: {image}")
+                            all_tags.append(image)
+                        except ValueError as e:
+                            print(f"Error parsing tag name '{tag_name}': {e}")
+                            continue
 
                 # Get the URL for the next page
                 next_page = data.get("next")
@@ -63,8 +110,9 @@ class DockerHubClient:
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching data from Docker Hub API: {e}")
                 return all_tags
-            except ValueError as e:
-                logger.debug("Error fetching data from Docker Hub API. Error %s", e)
+        if self.serializer:
+            # Serialize the images to JSON files
+            self.serializer.serialize(all_tags, image_type)
         return all_tags
 
 
@@ -184,10 +232,10 @@ def old_main():
         else:
             print("Could not retrieve Python versions.")
     print("Nama", __name__)
-    logger.info("INFO ------------------")
 
 def main():
-    dockerhub_client = DockerHubClient()
+    serializer = DockerHubSerializer(Path(__file__).parent.parent.parent/ "output")
+    dockerhub_client = DockerHubClient(serializer=serializer)
     for _, image in IMAGE_LIST.items():
         logger.debug("Testing Docker Hub API")
         start = time.time()
