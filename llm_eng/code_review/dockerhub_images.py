@@ -16,7 +16,13 @@ logger = logging.getLogger("__main__")
 
 class DockerHubSerializer:
 
-    def __init__(self, folder_path: Path):
+    def __init__(self, folder_path: Path, max_age: int = 48):
+        """Constructor for DockerHubSerializer.
+
+        Args:
+            folder_path (Path): The path to the folder where JSON files will be stored.
+            max_age (int): The maximum age of the JSON files in hours. Default is 48 hours.
+        """
         self.folder_path = folder_path
 
     def serialize(self, images: list[DockerHubImage], image_type:str) -> Path:
@@ -110,6 +116,7 @@ class DockerHubClient:
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching data from Docker Hub API: {e}")
                 return all_tags
+        all_tags = sorted(all_tags, reverse=True)
         if self.serializer:
             # Serialize the images to JSON files
             self.serializer.serialize(all_tags, image_type)

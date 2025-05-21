@@ -40,6 +40,18 @@ class TestDockerHubImage:
     @pytest.mark.parametrize(
         "image",
         [
+            "3.12.0b1-windowsservercore-ltsc2025",
+        ],
+    )
+    def test_not_parse_string_python(self, image):
+        name = "python"
+        docker_image = DockerHubImage.from_string(image, name)
+        assert docker_image is None
+
+
+    @pytest.mark.parametrize(
+        "image",
+        [
             "16.3-bullseye",
             "16.3-bookworm",
             "16.3-alpine3.20",
