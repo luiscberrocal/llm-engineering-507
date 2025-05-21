@@ -1,4 +1,5 @@
 import re
+import time
 from functools import lru_cache
 from pathlib import Path
 
@@ -6,11 +7,65 @@ import requests
 import json
 import logging
 
+from llm_eng.code_review.schemas import DockerHubImage
 from llm_eng.handlers import get_file_age
 from llm_eng.settings import IMAGE_LIST
 
 # Apply the logging configuration
 logger = logging.getLogger("__main__")
+
+class DockerHubClient:
+    """
+    A client for interacting with the Docker Hub API to fetch available Python versions (tags).
+    """
+
+    def __init__(self, base_url: str = None,page_size: int = 100):
+        if base_url is None:
+            # Base URL for the official Python image tags on Docker Hub V2 API
+            base_url = "https://hub.docker.com/v2/repositories/library/"
+        self.base_url = base_url
+        self.page_size = page_size
+
+    def get_versions(self, image_name) -> list[DockerHubImage]:
+        """
+        Fetches a list of available Python versions (tags) from Docker Hub.
+
+        Returns:
+            list: A list of strings, where each string is a Python version tag.
+                  Returns an empty list if an error occurs or no tags are found.
+        """
+        url = f"{self.base_url}/{image_name}/tags/"
+        all_tags = []
+        next_page = url
+        while next_page:
+            try:
+                # Make the GET request to the API endpoint
+                # Include page_size and sort by last_updated in descending order (most recent first)
+                params = {"page_size": self.page_size, "ordering": "last_updated"}
+                response = requests.get(next_page, params=params)
+
+                # Check if the request was successful (status code 200)
+                response.raise_for_status()
+
+                # Parse the JSON response
+                data = response.json()
+
+                # Extract tag names from the 'results' list
+                for result in data.get("results", []):
+                    tag_name = result.get("name")
+                    if tag_name:
+                        image = DockerHubImage.from_string(tag_name, image_name)
+                        all_tags.append(image)
+
+                # Get the URL for the next page
+                next_page = data.get("next")
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching data from Docker Hub API: {e}")
+                return all_tags
+            except ValueError as e:
+                logger.debug("Error fetching data from Docker Hub API. Error %s", e)
+        return all_tags
 
 
 @lru_cache(maxsize=5)
@@ -111,7 +166,8 @@ def set_local_versions(image: str, path: Path, data: list[str]) -> None:
         json.dump(data, f)
     logger.debug("Saved %s versions to %s", image, json_file)
 
-if __name__ == "__main__":
+
+def old_main():
     for image in IMAGE_LIST:
         logger.debug("Testing Docker Hub API")
         print(f"Fetching {image['name']} versions from Docker Hub...")
@@ -127,6 +183,29 @@ if __name__ == "__main__":
             print("-" * 80)
         else:
             print("Could not retrieve Python versions.")
-
     print("Nama", __name__)
     logger.info("INFO ------------------")
+
+def main():
+    dockerhub_client = DockerHubClient()
+    for _, image in IMAGE_LIST.items():
+        logger.debug("Testing Docker Hub API")
+        start = time.time()
+        print(f"Fetching {image['name']} versions from Docker Hub...")
+        image_versions = dockerhub_client.get_versions(
+            image["name"],
+        )
+        if image_versions:
+            print(f"Found {len(image_versions)} Python versions:")
+            # Print the first 20 versions as an example
+            for version in image_versions:
+                print(version)
+            print("-" * 80)
+        else:
+            print(f"Could not find {image['name']} versions.")
+        elapsed = time.time() - start
+        print(f"Elapsed time: {elapsed:.2f} seconds")
+        print("-" * 80)
+
+if __name__ == "__main__":
+    main()
