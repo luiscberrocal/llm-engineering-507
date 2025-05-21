@@ -48,13 +48,9 @@ def classify_version(image_type: str, distro: str):
     response = open_ai.chat.completions.create(model=model, messages=messages)
 
     print(response.choices[0].message.content)
-    user_prompt_file = (
-        Path(__file__).parent / f"{model}_user_prompt_{image_type}_{distro.lower()}.txt"
-    )
-    with open(user_prompt_file, "w") as f:
-        f.write(user_prompt)
 
 if __name__ == "__main__":
-    classify_version(image_type="python", distro="Debian")
+    # classify_version(image_type="python", distro="Debian")
+    classify_version(image_type="postgres", distro="Debian")
 
 
