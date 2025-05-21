@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
@@ -7,7 +6,8 @@ import requests
 import json
 import logging
 
-from llm_eng.settings import LOGGING_CONFIG, IMAGE_LIST
+from llm_eng.handlers import get_file_age
+from llm_eng.settings import IMAGE_LIST
 
 # Apply the logging configuration
 logger = logging.getLogger("__main__")
@@ -92,22 +92,6 @@ def get_versions(image_name: str, image_filter: str, page_size: int = 100) -> li
     set_local_versions(image_name, Path(__file__).parent, tags)
     return tags
 
-
-def get_file_age(path: Path) -> float:
-    """
-    Get the age of a file in hours.
-
-    Args:
-        path (Path): The path to the file.
-
-    Returns:
-        float: The age of the file in hours.
-    """
-    if path.exists():
-        now = datetime.now().timestamp()
-        return (now - path.stat().st_mtime) // 3600
-    else:
-        return 0.0
 
 def get_local_versions(image: str, path: Path, max_age:int = 2) -> list[str]:
     """Get the local versions of a docker image."""

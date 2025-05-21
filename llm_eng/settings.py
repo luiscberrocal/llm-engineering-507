@@ -31,20 +31,20 @@ LOGGING_CONFIG = {
     },
 }
 
-IMAGE_LIST = [
-    {
+IMAGE_LIST = {
+  "python":  {
         "name": "python",
         "image_filter": r"3\.1\d+\.\d+-([a-zA-Z]+)(-[a-zA-Z0-9]+)?",
     },
-    {
+    "postgres": {
         "name": "postgres",
         "image_filter": r"1[679]\.\d+-([a-zA-Z]+)(-[a-zA-Z0-9]+)?",
     },
-    {
+    "node": {
         "name": "node",
         "image_filter": r"(\d+\.\d+\.\d+)-([A-Za-z-0-9\.]+)",
     },
-]
+}
 
 load_dotenv(override=True)
 API_KEY = os.getenv('OPENAI_API_KEY')
