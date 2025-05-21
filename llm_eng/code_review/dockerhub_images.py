@@ -101,7 +101,7 @@ def get_file_age(path: Path) -> float:
         path (Path): The path to the file.
 
     Returns:
-        int: The age of the file in days.
+        float: The age of the file in hours.
     """
     if path.exists():
         now = datetime.now().timestamp()
